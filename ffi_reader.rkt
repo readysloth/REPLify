@@ -5,20 +5,25 @@
 (require ffi/unsafe ffi/unsafe/define)
 
 
-(provide read read-syntax)
+(provide (rename-out [ffi-read read]
+                     [ffi-read-syntax read-syntax]))
 
 
-(define (read in)
-  (read-syntax #f in))
+(define (ffi-read in)
+  (ffi-read-syntax #f in))
 
 
-(define (read-syntax src in) 
-  (define parsed-line (parse-line (read-line in)))
-  (cond 
-    [(list? parsed-line) (to-syntax (list (string->symbol (first parsed-line))
-                                                          (first (rest parsed-line)))
-                                    #f #f)]
-    [(string? parsed-line) (to-syntax `(eval ,(string->symbol parsed-line)) #f #f)]))
+(define (ffi-read-syntax src in) 
+  (define lines (port->lines in))
+  (datum->syntax #f
+    `(module ffi-script racket
+    ,@(map (lambda (line)
+              (define parsed-line (parse-line line))
+              (cond 
+                [(list? parsed-line) (list (string->symbol (first parsed-line))
+                                           (first (rest parsed-line)))]
+                [(string? parsed-line) `(eval ,(string->symbol parsed-line))]))
+            lines))))
 
 
 (define (to-syntax v src ln)
@@ -33,3 +38,4 @@
 
 (define (parse-define line)
   (rest (regexp-match #px"#(use|header|fregex)\\s+(\\S+)" line)))
+
