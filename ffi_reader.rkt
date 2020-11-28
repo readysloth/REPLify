@@ -14,9 +14,11 @@
 
 (define (read-syntax src in) 
   (define parsed-line (parse-line (read-line in)))
-  (to-syntax (list (string->symbol (first parsed-line))
-                   (first (rest parsed-line)))
-             #f #f))
+  (cond 
+    [(list? parsed-line) (to-syntax (list (string->symbol (first parsed-line))
+                                                          (first (rest parsed-line)))
+                                    #f #f)]
+    [(string? parsed-line) (to-syntax `(eval ,(string->symbol parsed-line)) #f #f)]))
 
 
 (define (to-syntax v src ln)
@@ -26,7 +28,7 @@
 (define (parse-line line)
   (if (starts-with-char? line #\#)
     (parse-define line)
-    (line)))
+    line))
 
 
 (define (parse-define line)
