@@ -1,0 +1,6 @@
+#use /lib64/libc.so.6
+#header /usr/include/string.h 
+#header /usr/include/stdio.h
+#fregex "extern.*\)"
+
+(printf "%i\n" (strlen "string"))
