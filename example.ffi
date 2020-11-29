@@ -1,3 +1,4 @@
+#reader "ffi_reader.rkt"
 #use /lib64/libc.so.6
 #header /usr/include/string.h 
 #header /usr/include/stdio.h

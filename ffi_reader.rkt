@@ -16,7 +16,7 @@
 (define (ffi-read-syntax src in) 
   (define lines (port->lines in))
   (datum->syntax #f
-    `(module ffi-script racket
+    `(module ffi-script "ffi_reader.rkt"
     ,@(map (lambda (line)
               (define parsed-line (parse-line line))
               (cond 
