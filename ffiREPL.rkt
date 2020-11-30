@@ -50,7 +50,7 @@
 (require syntax/wrap-modbeg)
 
 (provide (rename-out [ffi-module-begin #%module-begin])
-         eval require #%top-interaction #%datum
+         eval require #%top-interaction #%datum #%top
          get-functions-from-header define-func
          header use)
 
@@ -58,7 +58,7 @@
   (#%module-begin
    EXPR ...))
 
-(define-syntax-rule (use lib)          (define-ffi-definer define-lib-func (ffi-lib lib)))
+(define-syntax-rule (use lib) (define-ffi-definer define-lib-func (ffi-lib lib)))
 (define-syntax-rule (header hdr regex)
   (map eval
        (map define-func
@@ -70,6 +70,7 @@
     ([list name sign]
      `(define-lib-func ,name ,(_fun (map make-ffi-type (rest sign)) ->
                                           (make-ffi-type (first sign)))))))
+
 
 (define (make-ffi-type any) (format "_~a" any))
 
