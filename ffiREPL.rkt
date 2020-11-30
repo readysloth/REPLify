@@ -39,7 +39,7 @@
 (define (parse-line line)
   (if (starts-with-char? line #\#)
     (parse-define line)
-    line))
+    (regexp-replace #px";.*" line "")))
 
 
 (define (parse-define line)
@@ -50,7 +50,8 @@
 (require syntax/wrap-modbeg)
 
 (provide (rename-out [ffi-module-begin #%module-begin])
-         require #%top-interaction #%datum
+         eval require #%top-interaction #%datum
+         get-functions-from-header define-func
          header use)
 
 (define-syntax-rule (ffi-module-begin EXPR ...)
@@ -58,8 +59,33 @@
    EXPR ...))
 
 (define-syntax-rule (use lib)          (define-ffi-definer define-lib-func (ffi-lib lib)))
-(define-syntax-rule (header hdr regex) (get-functions-from-header hdr (pregexp regex)))
+(define-syntax-rule (header hdr regex)
+  (map eval
+       (map define-func
+         (get-functions-from-header hdr (pregexp regex)))))
+
+
+(define (define-func str)
+  (match (parse-proto str)
+    ([list name sign]
+     `(define-lib-func ,name ,(_fun (map make-ffi-type (rest sign)) ->
+                                          (make-ffi-type (first sign)))))))
+
+(define (make-ffi-type any) (format "_~a" any))
+
 
 (define (get-functions-from-header header-path regex)
-  (filter (lambda (l) (regexp-match regex l)) 
+  (filter (lambda (l) (regexp-match regex l))
           (read-lines header-path)))
+
+
+(define (parse-proto str)
+  (define proto-regex (pregexp
+                        (string-join (append (map
+                              (lambda (t) (format "~s\\s*\\*|~s|" t t))
+                              '(char short int long
+                                float double bool size_t))
+                            `(,(format "~s\\s*\\*|~s" 'void 'void)))
+                          "")))
+  (append (list (second (regexp-match #px"([a-zA-Z_][a-zA-Z_0-9]*)\\s*\\(" str))
+                (regexp-match* proto-regex str))))
