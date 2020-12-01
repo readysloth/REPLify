@@ -47,7 +47,8 @@
 
 
 ; expander
-(require syntax/wrap-modbeg)
+(require syntax/wrap-modbeg
+         racket/syntax)
 
 (provide (rename-out [ffi-module-begin #%module-begin])
          eval require #%top-interaction #%datum #%top
@@ -58,21 +59,26 @@
   (#%module-begin
    EXPR ...))
 
-(define-syntax-rule (use lib) (define-ffi-definer define-lib-func (ffi-lib lib)))
+(define-syntax-rule (use lib)
+    (define-ffi-definer define-lib-func (ffi-lib lib)))
 (define-syntax-rule (header hdr regex)
-  (map eval
-       (map define-func
-         (get-functions-from-header hdr (pregexp regex)))))
+    (map define-func
+         (get-functions-from-header hdr (pregexp regex))))
 
 
 (define (define-func str)
   (match (parse-proto str)
     ([list name sign]
-     `(define-lib-func ,name ,(_fun (map make-ffi-type (rest sign)) ->
-                                          (make-ffi-type (first sign)))))))
+      (let
+        ([rsign (map (lambda (t) (if (string-contains? t "*") "_cpointer" t)) sign)]
+         [rname (string->symbol name)])
+         `(define-lib-func ,rname
+                           ,(append '(_fun)
+                                    (map make-ffi-type (rest rsign)) '(->)
+                                    (list (make-ffi-type (first rsign)))))))))
 
 
-(define (make-ffi-type any) (format "_~a" any))
+(define (make-ffi-type any) (string->symbol (format "_~a" any)))
 
 
 (define (get-functions-from-header header-path regex)
