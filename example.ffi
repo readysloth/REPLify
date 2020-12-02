@@ -2,6 +2,5 @@
 
 #use /lib64/libc.so.6
 #header /usr/include/string.h "extern.*\)"
-#header /usr/include/stdio.h  "extern.*\)"
 
-(printf "%i\n" (strlen "hello"))
+(strlen "hello, world")

@@ -43,26 +43,34 @@
 
 
 (define (parse-define line)
-  (rest (regexp-match #px"#(use|header)\\s+(\\S+)(?:\\s+(\\S+))?" line)))
+  (rest (regexp-match #px"#(use|header)\\s+(\\S+)(?:\\s+\"(.*)\")?" line)))
 
 
 ; expander
 (require syntax/wrap-modbeg
-         racket/syntax)
+         racket/syntax
+         ffi/unsafe ffi/unsafe/define)
+
 
 (provide (rename-out [ffi-module-begin #%module-begin])
-         eval require #%top-interaction #%datum #%top
+         eval require #%top-interaction #%datum #%top #%app
          get-functions-from-header define-func
          header use)
+
 
 (define-syntax-rule (ffi-module-begin EXPR ...)
   (#%module-begin
    EXPR ...))
 
+
 (define-syntax-rule (use lib)
-    (define-ffi-definer define-lib-func (ffi-lib lib)))
+    (define-ffi-definer define-lib-func (ffi-lib lib)
+                        #:default-make-fail (lambda (n)
+                                              (displayln (format "Cannot load ~a" n)))))
+
+
 (define-syntax-rule (header hdr regex)
-    (map define-func
+    (map define-lib-func
          (get-functions-from-header hdr (pregexp regex))))
 
 
@@ -70,11 +78,16 @@
   (match (parse-proto str)
     ([list name sign]
       (let
-        ([rsign (map (lambda (t) (if (string-contains? t "*") "_cpointer" t)) sign)]
+        ([rsign (map (lambda (t) (cond
+                                   [(regexp-match #px"char\\s+\\*" t) "string"]
+                                   [(regexp-match #px".+\\*" t) "pointer"]
+                                   [else t]))
+                     sign)]
          [rname (string->symbol name)])
          `(define-lib-func ,rname
                            ,(append '(_fun)
-                                    (map make-ffi-type (rest rsign)) '(->)
+                                    (filter (lambda(t) (not (eq? t '_void)))
+                                              (map make-ffi-type (rest rsign))) '(->)
                                     (list (make-ffi-type (first rsign)))))))))
 
 
@@ -91,8 +104,10 @@
                         (string-join (append (map
                               (lambda (t) (format "~s\\s*\\*|~s|" t t))
                               '(char short int long
-                                float double bool size_t))
+                                float double bool size_t
+                                FILE))
                             `(,(format "~s\\s*\\*|~s" 'void 'void)))
                           "")))
   (append (list (second (regexp-match #px"([a-zA-Z_][a-zA-Z_0-9]*)\\s*\\(" str))
-                (regexp-match* proto-regex str))))
+                (map (lambda (t) (string-replace t "size_t" "size"))
+                     (regexp-match* proto-regex str)))))
