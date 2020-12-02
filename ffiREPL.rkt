@@ -70,7 +70,7 @@
 
 
 (define-syntax-rule (header hdr regex)
-    (map define-lib-func
+    (map define-func
          (get-functions-from-header hdr (pregexp regex))))
 
 
@@ -84,8 +84,8 @@
                                    [else t]))
                      sign)]
          [rname (string->symbol name)])
-         `(define-lib-func ,rname
-                           ,(append '(_fun)
+         #`(define-lib-func #,rname
+                           #,(append '(_fun)
                                     (filter (lambda(t) (not (eq? t '_void)))
                                               (map make-ffi-type (rest rsign))) '(->)
                                     (list (make-ffi-type (first rsign)))))))))
