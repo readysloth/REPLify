@@ -1,8 +1,8 @@
 #lang racket
 
-(require string-util)
-(require 2htdp/batch-io)
-(require ffi/unsafe ffi/unsafe/define)
+(require string-util
+         2htdp/batch-io
+         ffi/unsafe ffi/unsafe/define)
 
 
 ; reader
@@ -74,6 +74,9 @@
          (get-functions-from-header hdr (pregexp regex))))
 
 
+(define (make-ffi-type any) (string->symbol (format "_~a" any)))
+
+
 (define (define-func str)
   (match (parse-proto str)
     ([list name sign]
@@ -90,8 +93,6 @@
                                               (map make-ffi-type (rest rsign))) '(->)
                                     (list (make-ffi-type (first rsign)))))))))
 
-
-(define (make-ffi-type any) (string->symbol (format "_~a" any)))
 
 
 (define (get-functions-from-header header-path regex)
