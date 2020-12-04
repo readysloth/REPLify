@@ -28,7 +28,7 @@
                                            (filter identity (rest parsed-line)))]
                     [(string? parsed-line) (if (regexp-match #px"^\\s*$" parsed-line)
                                                #f
-                                               (string->symbol parsed-line))]))
+                                               (read (open-input-string parsed-line)))]))
                 lines)))))
 
 
