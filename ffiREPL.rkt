@@ -1,4 +1,27 @@
 #lang racket
+#|
+
+This is small language that uses
+Racket ffi (foreign functions interface) facilities
+to provide compact way of calling functions from
+shared libraries.
+
+Keywords:
+
+#use path-to-lib
+  says what library language should use
+
+#header path-to-header regex-to-get-function-defs
+  points to header from which function definitions
+  should be extracted and associates regexp which
+  will extract them
+
+; -- this is comment
+
+After all definifions you can write regular racket code
+for calling ffi-functions
+
+|#
 
 (require string-util
          2htdp/batch-io
@@ -70,14 +93,14 @@
 
 
 (define-syntax-rule (header hdr regex)
-    (map define-func
-         (get-functions-from-header hdr (pregexp regex))))
+    (for ([function (get-functions-from-header hdr (pregexp regex))])
+      (define-func function)))
 
 
 (define (make-ffi-type any) (string->symbol (format "_~a" any)))
 
 
-(define (define-func str)
+(define-syntax-rule (define-func str)
   (match (parse-proto str)
     ([list name sign]
       (let
@@ -88,9 +111,9 @@
                      sign)]
          [rname (string->symbol name)])
          #`(define-lib-func #,rname
-                           #,(append '(_fun)
+                            #,(append '(_fun)
                                     (filter (lambda(t) (not (eq? t '_void)))
-                                              (map make-ffi-type (rest rsign))) '(->)
+                                            (map make-ffi-type (rest rsign))) '(->)
                                     (list (make-ffi-type (first rsign)))))))))
 
 
