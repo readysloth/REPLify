@@ -86,15 +86,19 @@ for calling ffi-functions
    EXPR ...))
 
 
-(define-syntax-rule (use lib)
-    (define-ffi-definer define-lib-func (ffi-lib lib)
-                        #:default-make-fail (lambda (n)
-                                              (displayln (format "Cannot load ~a" n)))))
+(define-syntax (use stx)
+  (syntax-case stx ()
+    [(_ lib)
+      #'(define-ffi-definer define-lib-func (ffi-lib lib)
+                          #:default-make-fail (lambda (n)
+                                                (displayln (format "Cannot load ~a" n))))]))
 
 
-(define-syntax-rule (header hdr regex)
-    (for ([function (get-functions-from-header hdr (pregexp regex))])
-      (define-func function)))
+(define-syntax (header stx)
+  (syntax-case stx ()
+    [(_ hdr regex)
+      #'(for ([function (get-functions-from-header hdr (pregexp regex))])
+          (define-func function))]))
 
 
 (define (make-ffi-type any) (string->symbol (format "_~a" any)))
