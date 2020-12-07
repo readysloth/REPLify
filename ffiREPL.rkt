@@ -40,10 +40,10 @@ for calling ffi-functions
 (define (ffi-read-syntax src in) 
   (define lines (port->lines in))
   (datum->syntax #f
-    (filter identity
       `(module ffi-script "ffiREPL.rkt"
         (require ffi/unsafe ffi/unsafe/define)
-        ,@(map (lambda (line)
+        ,@(filter identity
+                  (map (lambda (line)
                   (define parsed-line (parse-line line))
                   (cond 
                     [(list? parsed-line) (append
